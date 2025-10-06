@@ -1,8 +1,8 @@
 {
-  "name": "feieryuu-wallpaper",
+  "name": "feiyu-wallpaper",
   "version": "0.2.0",
   "private": true,
-  "description": "Minimal wallpaper setter app (Electron + Vue3 + TS)",
+  "description": "飞鱼壁纸 - 精美的桌面壁纸应用",
   "author": "",
   "main": "electron-main.js",
   "type": "module",
@@ -14,9 +14,6 @@
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
-    "axios": "^1.7.7",
-    "element-plus": "^2.8.8",
-    "pinia": "^2.2.6",
     "vue": "^3.5.12"
   },
   "devDependencies": {
@@ -28,12 +25,15 @@
     "electron-builder": "^25.1.8",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
+    "terser": "^5.44.0",
     "typescript": "^5.6.3",
     "vite": "^5.4.8",
     "wait-on": "^8.0.2"
   },
   "build": {
-    "appId": "com.example.feieryuu.wallpaper",
+    "appId": "com.feiyu.wallpaper",
+    "productName": "飞鱼壁纸",
+    "icon": "logo.png",
     "mac": {
       "category": "public.app-category.utilities",
       "target": [
@@ -46,8 +46,11 @@
       "dist/assets/**",
       "electron-main.js",
       "preload.cjs",
-      "package.json"
+      "package.json",
+      "logo.png"
     ],
+    "asarUnpack": [],
+    "compression": "maximum",
     "extraResources": [],
     "directories": {
       "buildResources": "build"

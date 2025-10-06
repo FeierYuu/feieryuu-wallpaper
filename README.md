@@ -149,8 +149,8 @@ feieryuu-wallpaper/
 
 如有问题或建议，请通过以下方式联系：
 
-- 提交 Issue：[GitHub Issues](https://github.com/你的用户名/feieryuu-wallpaper/issues)
-- 邮箱：your-email@example.com
+- 提交 Issue：[GitHub Issues](https://github.com/feierYuu/feieryuu-wallpaper/issues)
+- 邮箱：1965214761@qq.com
 
 ---
 

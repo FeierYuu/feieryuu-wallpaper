@@ -8,8 +8,8 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && electron .\"",
-    "build:renderer": "vite build",
-    "build": "vite build && electron-builder",
+    "build:renderer": "vite build && node fix-assets.js",
+    "build": "vite build && node fix-assets.js && electron-builder",
     "preview": "vite preview",
     "postinstall": "electron-builder install-app-deps"
   },

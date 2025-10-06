@@ -222,7 +222,7 @@ const images = ref<Img[]>([]);
 const loading = ref(false);
 const applying = ref(false);
 const downloading = ref(false);
-const footerText = ref('此软件 免费使用');
+const footerText = ref('此软件 免费使用 商用追责');
 const hoveredIndex = ref(-1); // 新增：跟踪鼠标悬浮的图片索引
 
 // 分类相关

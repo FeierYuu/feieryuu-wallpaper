@@ -217,6 +217,21 @@ function createWindow() {
   mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
     console.log(`[Renderer Console ${level}]:`, message);
   });
+  
+  // 添加资源加载错误监听
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    console.log('❌ Resource load failed:', {
+      errorCode,
+      errorDescription,
+      validatedURL
+    });
+  });
+  
+  // 监听所有网络请求
+  mainWindow.webContents.session.webRequest.onBeforeRequest((details, callback) => {
+    console.log('🌐 Request:', details.url);
+    callback({});
+  });
 }
 
 app.whenReady().then(async () => {

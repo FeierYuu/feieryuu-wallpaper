@@ -1,45 +1,155 @@
 <template>
   <div class="h-full w-full glass flex flex-col -webkit-app-region-drag">
-    <header class="flex items-center justify-between px-3 py-2 border-b border-white/10 flex-shrink-0 -webkit-app-region-drag">
-      <div class="text-sm font-semibold opacity-90 text-white pl-14">小而美壁纸--4K</div>
-      <div class="flex items-center gap-3 text-xs opacity-80 text-white -webkit-app-region-no-drag">
-        <button class="hover:opacity-100 hover:bg-white/10 px-2 py-1 rounded transition-all duration-200" @click="prev" :disabled="currentPage <= 1">← 上一页</button>
-        <span class="text-xs opacity-60">{{ currentPage }}</span>
-        <button class="hover:opacity-100 hover:bg-white/10 px-2 py-1 rounded transition-all duration-200" @click="next">下一页→</button>
+    <header class="flex items-center justify-between px-4 py-3 border-b border-white/10 flex-shrink-0 -webkit-app-region-drag">
+      <div class="flex items-center gap-3">
+        <div class="text-base font-semibold opacity-90 text-white">飞鱼壁纸</div>
+        <button 
+          class="hover:opacity-100 text-white hover:bg-white/10 px-3 py-1.5 rounded transition-all duration-200 text-sm -webkit-app-region-no-drag" 
+          @click="toggleHistory"
+          :class="{ 'bg-white/20': showHistory }"
+        >
+          📚 历史
+        </button>
+        <select 
+          v-if="!showHistory"
+          v-model="selectedCategory" 
+          @change="onCategoryChange"
+          class="bg-white/10 border border-white/20 rounded px-2 py-1 text-sm text-white opacity-90 hover:bg-white/20 transition-all duration-200 -webkit-app-region-no-drag"
+        >
+          <option v-for="category in categories" :key="category.value" :value="category.value" class="bg-gray-800 text-white">
+            {{ category.label }}
+          </option>
+        </select>
+      </div>
+      <div class="flex items-center text-sm opacity-80 text-white -webkit-app-region-no-drag gap-2">
+        <button 
+          class="hover:opacity-100 hover:bg-white/10 px-3 py-1.5 rounded transition-all duration-200 text-sm" 
+          @click="handlePrevPage" 
+          :disabled="showHistory ? currentHistoryPage <= 1 : currentPage <= 1"
+        >
+          ← 上页
+        </button>
+        <span class="text-sm opacity-60 px-1">
+          {{ showHistory ? `${currentHistoryPage}/${totalHistoryPages}` : currentPage }}
+        </span>
+        <button 
+          class="hover:opacity-100 hover:bg-white/10 px-3 py-1.5 rounded transition-all duration-200 text-sm" 
+          @click="handleNextPage"
+          :disabled="showHistory ? currentHistoryPage >= totalHistoryPages : false"
+        >
+          下页→
+        </button>
       </div>
     </header>
     
-    <div class="flex-1 px-3 py-3 flex flex-col -webkit-app-region-no-drag">
-      <div v-if="loading" class="grid grid-cols-4 gap-1.5 flex-1">
-        <div v-for="n in 8" :key="n" class="rounded-lg animate-pulse bg-white/10"></div>
+    <div class="flex-1 px-2 py-3 flex flex-col -webkit-app-region-no-drag">
+      <!-- 历史壁纸视图 -->
+      <div v-if="showHistory" class="flex-1 flex flex-col overflow-hidden" style="max-height: 100%;">
+        <div class="flex items-center justify-between mb-2 min-w-0">
+          <h3 class="text-xs font-semibold text-white opacity-90 truncate flex-shrink-0">历史({{ historyItems.length }})</h3>
+          <div class="flex gap-1 flex-shrink-0">
+            <button 
+              class="text-xs px-1 py-0.5 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded transition-all duration-200"
+              @click="clearHistory"
+              :disabled="historyItems.length === 0"
+            >
+              清空
+            </button>
+            <button 
+              class="text-xs px-1 py-0.5 bg-white/10 hover:bg-white/20 text-white rounded transition-all duration-200"
+              @click="refreshHistory"
+            >
+              刷新
+            </button>
+          </div>
+        </div>
+        
+        <div v-if="historyLoading" class="grid grid-cols-4 flex-1 auto-rows-fr grid-container">
+          <div v-for="n in 8" :key="n" class="rounded-lg animate-pulse bg-white/10 aspect-[4/3]"></div>
+        </div>
+        
+        <div v-else-if="historyItems.length === 0" class="flex-1 flex items-center justify-center">
+          <div class="text-center text-white/60">
+            <div class="text-4xl mb-2">📚</div>
+            <div class="text-sm">暂无历史壁纸</div>
+            <div class="text-xs opacity-60 mt-1">应用壁纸后会自动记录在这里</div>
+          </div>
+        </div>
+        
+        <div v-else class="grid grid-cols-4 flex-1 auto-rows-fr grid-container overflow-hidden" style="max-height: calc(100% - 2rem);">
+          <div 
+            v-for="(item, idx) in currentHistoryItems" 
+            :key="item.id" 
+            class="image-container"
+          >
+            <img 
+              :src="item.thumb" 
+              class="image" 
+              @error="handleHistoryImageError"
+              @click="() => openHistoryPreview(idx)"
+            />
+            <div class="button-overlay">
+              <button 
+                class="action-btn" 
+                @click.stop="applyHistoryItem(item)"
+                :disabled="applying"
+              >
+                应用
+              </button>
+              <button 
+                class="action-btn" 
+                @click.stop="downloadHistoryItem(item)"
+                :disabled="downloading"
+              >
+                下载
+              </button>
+              <button 
+                class="action-btn bg-red-500/20 hover:bg-red-500/30 text-red-300" 
+                @click.stop="deleteHistoryItem(item.id)"
+              >
+                删除
+              </button>
+            </div>
+            <div class="absolute bottom-1 left-1 right-1 text-xs text-white/80 bg-black/50 rounded px-1 py-0.5 truncate">
+              {{ formatDate(item.appliedAt) }}
+            </div>
+          </div>
+        </div>
       </div>
-      <div v-else class="grid grid-cols-4 gap-1.5 flex-1">
-        <div 
-          v-for="(img, idx) in images" 
-          :key="`${currentPage}-${idx}`" 
-          class="image-container"
-        >
-          <img 
-            :src="img.thumb" 
-            class="image" 
-            @error="handleImageError"
-            @click="() => { console.log('Image clicked for preview:', idx); openPreview(idx); }"
-          />
-          <div class="button-overlay">
-            <button 
-              class="action-btn" 
-              @click.stop="apply(img)"
-              :disabled="applying"
-            >
-              应用
-            </button>
-            <button 
-              class="action-btn" 
-              @click.stop="download(img)"
-              :disabled="downloading"
-            >
-              下载
-            </button>
+      
+      <!-- 正常壁纸视图 -->
+      <div v-else>
+        <div v-if="loading" class="grid grid-cols-4 flex-1 auto-rows-fr grid-container">
+          <div v-for="n in 8" :key="n" class="rounded-lg animate-pulse bg-white/10 aspect-[4/3]"></div>
+        </div>
+        <div v-else class="grid grid-cols-4 flex-1 auto-rows-fr grid-container">
+          <div 
+            v-for="(img, idx) in images" 
+            :key="`${currentPage}-${idx}`" 
+            class="image-container"
+          >
+            <img 
+              :src="img.thumb" 
+              class="image" 
+              @error="handleImageError"
+              @click="() => { console.log('Image clicked for preview:', idx); openPreview(idx); }"
+            />
+            <div class="button-overlay">
+              <button 
+                class="action-btn" 
+                @click.stop="apply(img)"
+                :disabled="applying"
+              >
+                应用
+              </button>
+              <button 
+                class="action-btn" 
+                @click.stop="download(img)"
+                :disabled="downloading"
+              >
+                下载
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -87,8 +197,8 @@
         <!-- 图片信息 -->
         <div v-if="currentPreviewImage" class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 text-white">
           <div class="text-sm opacity-90">{{ currentPreviewImage.title || '随机壁纸' }}</div>
-          <div v-if="currentPreviewImage.copyright" class="text-xs opacity-70 mt-1">{{ currentPreviewImage.copyright }}</div>
-          <div class="text-xs opacity-60 mt-2">{{ currentPreviewIndex + 1 }} / {{ images.length }}</div>
+          <div v-if="!showHistory && (currentPreviewImage as Img).copyright" class="text-xs opacity-70 mt-1">{{ (currentPreviewImage as Img).copyright }}</div>
+          <div class="text-xs opacity-60 mt-2">{{ currentPreviewIndex + 1 }} / {{ showHistory ? historyItems.length : images.length }}</div>
         </div>
       </div>
     </div>
@@ -97,6 +207,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import type { WallpaperHistoryItem } from './types/global';
 
 interface Img {
   thumb: string;
@@ -114,18 +225,50 @@ const downloading = ref(false);
 const footerText = ref('此软件 免费使用');
 const hoveredIndex = ref(-1); // 新增：跟踪鼠标悬浮的图片索引
 
+// 分类相关
+const selectedCategory = ref('4k');
+const categories = ref([
+  { value: '4k', label: '4K高清' },
+  { value: 'landscape', label: '风景' },
+  { value: 'belle', label: '妹子' },
+  { value: 'game', label: '游戏' },
+  { value: 'photo', label: '影视剧照' },
+  { value: 'cool', label: '炫酷' },
+  { value: 'star', label: '明星' },
+  { value: 'car', label: '汽车' },
+  { value: 'cartoon', label: '动漫' }
+]);
+
+// 历史壁纸相关
+const showHistory = ref(false);
+const historyItems = ref<WallpaperHistoryItem[]>([]);
+const historyLoading = ref(false);
+const currentHistoryPage = ref(1);
+const historyPageSize = 8;
+
 // 预览相关
 const previewVisible = ref(false);
 const currentPreviewIndex = ref(0);
 
 const currentPreviewImage = computed(() => {
+  if (showHistory.value) {
+    return historyItems.value[currentPreviewIndex.value];
+  }
   return images.value[currentPreviewIndex.value];
 });
 
-async function loadImages(page: number) {
+// 历史分页相关计算属性
+const totalHistoryPages = computed(() => Math.ceil(historyItems.value.length / historyPageSize));
+const currentHistoryItems = computed(() => {
+  const start = (currentHistoryPage.value - 1) * historyPageSize;
+  const end = start + historyPageSize;
+  return historyItems.value.slice(start, end);
+});
+
+async function loadImages(page: number, category?: string) {
   loading.value = true;
   try {
-    const result = await window.api?.fetchBingWallpapers(page);
+    const result = await window.api?.fetchBingWallpapers(page, category || selectedCategory.value);
     if (result) {
       images.value = result;
     }
@@ -147,6 +290,13 @@ function prev() {
 function next() {
   currentPage.value++;
   loadImages(currentPage.value);
+}
+
+// 分类变更处理
+function onCategoryChange() {
+  console.log('分类变更:', selectedCategory.value);
+  currentPage.value = 1; // 重置到第一页
+  loadImages(1, selectedCategory.value);
 }
 
 function handleImageError(event: Event) {
@@ -182,15 +332,17 @@ function closePreview() {
 }
 
 function prevImage() {
+  const currentList = showHistory.value ? historyItems.value : images.value;
   if (currentPreviewIndex.value > 0) {
     currentPreviewIndex.value--;
   } else {
-    currentPreviewIndex.value = images.value.length - 1;
+    currentPreviewIndex.value = currentList.length - 1;
   }
 }
 
 function nextImage() {
-  if (currentPreviewIndex.value < images.value.length - 1) {
+  const currentList = showHistory.value ? historyItems.value : images.value;
+  if (currentPreviewIndex.value < currentList.length - 1) {
     currentPreviewIndex.value++;
   } else {
     currentPreviewIndex.value = 0;
@@ -219,11 +371,21 @@ async function apply(img: Img) {
   
   try {
     console.log('Applying wallpaper:', img.url);
-    const res = await window.api?.applyWallpaper(img.url);
+    // 只传递可序列化的数据
+    const wallpaperData = {
+      url: img.url,
+      thumb: img.thumb,
+      title: img.title || '未知壁纸'
+    };
+    const res = await window.api?.applyWallpaper(wallpaperData);
     console.log('Apply result:', res);
     
     if (res?.success) {
       alert('已应用为壁纸');
+      // 刷新历史记录
+      if (showHistory.value) {
+        await loadHistory();
+      }
     } else {
       const reason = res?.error || '未知错误';
       alert('应用失败：' + reason);
@@ -272,6 +434,182 @@ async function loadFooterText() {
   }
 }
 
+// 历史壁纸相关方法
+async function loadHistory() {
+  historyLoading.value = true;
+  try {
+    const result = await window.api?.getWallpaperHistory();
+    if (result?.success) {
+      historyItems.value = result.data;
+    } else {
+      console.error('加载历史记录失败:', result?.error);
+    }
+  } catch (e: any) {
+    console.error('加载历史记录失败:', e);
+  } finally {
+    historyLoading.value = false;
+  }
+}
+
+function toggleHistory() {
+  showHistory.value = !showHistory.value;
+  if (showHistory.value) {
+    currentHistoryPage.value = 1; // 重置到第一页
+    loadHistory();
+  }
+}
+
+async function refreshHistory() {
+  await loadHistory();
+}
+
+async function clearHistory() {
+  if (confirm('确定要清空所有历史记录吗？')) {
+    try {
+      const result = await window.api?.clearWallpaperHistory();
+      if (result?.success) {
+        historyItems.value = [];
+        alert('历史记录已清空');
+      } else {
+        alert('清空失败：' + (result?.error || '未知错误'));
+      }
+    } catch (e: any) {
+      console.error('清空历史记录失败:', e);
+      alert('清空失败：' + (e?.message || '未知错误'));
+    }
+  }
+}
+
+async function deleteHistoryItem(id: string) {
+  if (confirm('确定要删除这条历史记录吗？')) {
+    try {
+      const result = await window.api?.deleteWallpaperHistory(id);
+      if (result?.success) {
+        historyItems.value = historyItems.value.filter(item => item.id !== id);
+        alert('删除成功');
+      } else {
+        alert('删除失败：' + (result?.error || '未知错误'));
+      }
+    } catch (e: any) {
+      console.error('删除历史记录失败:', e);
+      alert('删除失败：' + (e?.message || '未知错误'));
+    }
+  }
+}
+
+async function applyHistoryItem(item: WallpaperHistoryItem) {
+  if (applying.value) return;
+  applying.value = true;
+  
+  try {
+    const wallpaperData = {
+      url: item.url,
+      thumb: item.thumb,
+      title: item.title,
+      localPath: item.localPath // 添加本地路径信息
+    };
+    const res = await window.api?.applyWallpaper(wallpaperData);
+    
+    if (res?.success) {
+      alert('已应用为壁纸');
+      await loadHistory(); // 刷新历史记录
+    } else {
+      const reason = res?.error || '未知错误';
+      alert('应用失败：' + reason);
+    }
+  } catch (e: any) {
+    console.error('Apply history item error:', e);
+    alert('应用失败：' + (e?.message || '未知错误'));
+  } finally {
+    applying.value = false;
+  }
+}
+
+async function downloadHistoryItem(item: WallpaperHistoryItem) {
+  if (downloading.value) return;
+  downloading.value = true;
+  
+  try {
+    const res = await window.api?.downloadImage(item.url);
+    
+    if (res?.ok) {
+      alert('下载成功：' + res.path);
+    } else {
+      alert('下载失败：' + (res?.error || '未知错误'));
+    }
+  } catch (e: any) {
+    console.error('Download history item error:', e);
+    alert('下载失败：' + (e?.message || '未知错误'));
+  } finally {
+    downloading.value = false;
+  }
+}
+
+function openHistoryPreview(index: number) {
+  // 计算在完整历史列表中的实际索引
+  const actualIndex = (currentHistoryPage.value - 1) * historyPageSize + index;
+  currentPreviewIndex.value = actualIndex;
+  previewVisible.value = true;
+}
+
+// 历史分页函数（复用顶部分页控制）
+function prevHistoryPage() {
+  if (currentHistoryPage.value > 1) {
+    currentHistoryPage.value--;
+  }
+}
+
+function nextHistoryPage() {
+  if (currentHistoryPage.value < totalHistoryPages.value) {
+    currentHistoryPage.value++;
+  }
+}
+
+// 统一的分页处理函数
+function handlePrevPage() {
+  if (showHistory.value) {
+    prevHistoryPage();
+  } else {
+    prev();
+  }
+}
+
+function handleNextPage() {
+  if (showHistory.value) {
+    nextHistoryPage();
+  } else {
+    next();
+  }
+}
+
+function handleHistoryImageError(event: Event) {
+  const img = event.target as HTMLImageElement;
+  const fallbackSvg = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="#333"/>
+      <text x="50" y="50" text-anchor="middle" dy="0.3em" fill="#666" font-size="12">图片加载失败</text>
+    </svg>
+  `)}`;
+  img.src = fallbackSvg;
+}
+
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) {
+    return '今天 ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  } else if (diffDays === 1) {
+    return '昨天 ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  } else if (diffDays < 7) {
+    return `${diffDays}天前`;
+  } else {
+    return date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
+  }
+}
+
 onMounted(() => {
   loadImages(currentPage.value);
   loadFooterText();
@@ -309,13 +647,24 @@ onUnmounted(() => {
   -webkit-app-region: no-drag;
 }
 
+/* 网格容器样式 */
+.grid-container {
+  gap: 0.5rem;
+  margin-top: 10px;
+}
+
 /* 图片容器 */
 .image-container {
   position: relative;
   cursor: pointer;
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: 6px;
   -webkit-app-region: no-drag;
+  aspect-ratio: 4/3;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  min-height: 120px;
 }
 
 .image {
@@ -324,6 +673,7 @@ onUnmounted(() => {
   object-fit: cover;
   transition: transform 0.2s ease;
   -webkit-app-region: no-drag;
+  display: block;
 }
 
 /* 悬浮时图片放大 */

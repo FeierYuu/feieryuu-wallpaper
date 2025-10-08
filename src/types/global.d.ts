@@ -8,6 +8,7 @@ export interface WallpaperHistoryItem {
   title: string;
   appliedAt: string;
   localPath?: string;
+  isLocal?: boolean; // 标记是否为本地图片
 }
 
 declare global {
@@ -22,6 +23,8 @@ declare global {
       getWallpaperHistory: () => Promise<{ success: boolean; data: WallpaperHistoryItem[]; error?: string }>;
       deleteWallpaperHistory: (historyId: string) => Promise<{ success: boolean; error?: string }>;
       clearWallpaperHistory: () => Promise<{ success: boolean; error?: string }>;
+      // 导入图片接口
+      importImage: () => Promise<{ success: boolean; path?: string; error?: string }>;
     };
   }
 }

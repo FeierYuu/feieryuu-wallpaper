@@ -20,6 +20,13 @@
             {{ category.label }}
           </option>
         </select>
+        <button 
+          v-if="showHistory"
+          @click="importImage"
+          class="bg-white/10 border border-white/20 rounded px-2 py-1 text-sm text-white opacity-90 hover:bg-white/20 transition-all duration-200 -webkit-app-region-no-drag"
+        >
+          📁 导入
+        </button>
       </div>
       <div class="flex items-center text-sm opacity-80 text-white -webkit-app-region-no-drag gap-2">
         <button 
@@ -83,7 +90,7 @@
             class="image-container"
           >
             <img 
-              :src="item.thumb" 
+              :src="getImageUrl(item.thumb, item.isLocal)" 
               class="image" 
               @error="handleHistoryImageError"
               @click="() => openHistoryPreview(idx)"
@@ -620,6 +627,43 @@ onMounted(() => {
   
   document.addEventListener('keydown', handleKeydown);
 });
+
+// 获取图片URL，处理本地图片
+function getImageUrl(url: string, isLocal?: boolean) {
+  console.log('getImageUrl called with:', { url, isLocal });
+  
+  if (isLocal && url && !url.startsWith('http')) {
+    // 本地图片，使用file://协议
+    const fileUrl = `file://${url}`;
+    console.log('Local image URL:', fileUrl);
+    return fileUrl;
+  }
+  // 检查是否为本地文件路径（不以http开头且包含路径分隔符）
+  if (url && !url.startsWith('http') && (url.includes('/') || url.includes('\\'))) {
+    const fileUrl = `file://${url}`;
+    console.log('Detected local file URL:', fileUrl);
+    return fileUrl;
+  }
+  console.log('Using original URL:', url);
+  return url;
+}
+
+// 导入图片功能
+async function importImage() {
+  try {
+    const result = await window.api?.importImage();
+    if (result?.success) {
+      alert('图片导入成功！');
+      // 刷新历史记录以显示新导入的图片
+      await loadHistory();
+    } else {
+      alert('导入失败：' + (result?.error || '未知错误'));
+    }
+  } catch (e: any) {
+    console.error('Import image error:', e);
+    alert('导入失败：' + (e?.message || '未知错误'));
+  }
+}
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown);

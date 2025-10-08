@@ -1,0 +1,118 @@
+{
+  "name": "feiyu-wallpaper",
+  "version": "0.2.0",
+  "private": true,
+  "description": "飞鱼壁纸 - 精美的桌面壁纸应用",
+  "author": "",
+  "main": "electron-main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && electron .\"",
+    "build:renderer": "vite build && node fix-assets.js",
+    "build": "vite build && node fix-assets.js && electron-builder",
+    "preview": "vite preview",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "dependencies": {
+    "vue": "^3.5.12"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.5",
+    "@vitejs/plugin-vue": "^5.1.4",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.0.1",
+    "electron": "32.3.3",
+    "electron-builder": "^25.1.8",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
+    "terser": "^5.44.0",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.8",
+    "wait-on": "^8.0.2"
+  },
+  "build": {
+    "appId": "com.feiyu.wallpaper",
+    "productName": "飞鱼壁纸",
+    "icon": "logo.jpg",
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "files": [
+      "dist/index.html",
+      "dist/assets/**",
+      "electron-main.js",
+      "preload.cjs",
+      "package.json",
+      "logo.jpg"
+    ],
+    "asarUnpack": [],
+    "compression": "maximum",
+    "extraResources": [],
+    "removePackageScripts": true,
+    "removePackageKeywords": true,
+    "removePackageAuthor": true,
+    "removePackageDescription": true,
+    "removePackageHomepage": true,
+    "removePackageLicense": true,
+    "removePackageRepository": true,
+    "removePackageVersion": true,
+    "removePackageMain": true,
+    "removePackageTypes": true,
+    "removePackageExports": true,
+    "removePackageImports": true,
+    "removePackageBin": true,
+    "removePackageMan": true,
+    "removePackageDirectories": true,
+    "removePackageEngines": true,
+    "removePackageOs": true,
+    "removePackageCpu": true,
+    "removePackagePreferGlobal": true,
+    "removePackagePrivate": true,
+    "removePackagePublishConfig": true,
+    "removePackageWorkspaces": true,
+    "removePackageBundledDependencies": true,
+    "removePackageOptionalDependencies": true,
+    "removePackagePeerDependencies": true,
+    "removePackagePeerDependenciesMeta": true,
+    "removePackageDependenciesMeta": true,
+    "removePackageOverrides": true,
+    "removePackageResolutions": true,
+    "removePackagePackageManager": true,
+    "removePackagePackageType": true,
+    "removePackagePackageExports": true,
+    "removePackagePackageImports": true,
+    "removePackagePackageBin": true,
+    "removePackagePackageMan": true,
+    "removePackagePackageDirectories": true,
+    "removePackagePackageEngines": true,
+    "removePackagePackageOs": true,
+    "removePackagePackageCpu": true,
+    "removePackagePackagePreferGlobal": true,
+    "removePackagePackagePrivate": true,
+    "removePackagePackagePublishConfig": true,
+    "removePackagePackageWorkspaces": true,
+    "removePackagePackageBundledDependencies": true,
+    "removePackagePackageOptionalDependencies": true,
+    "removePackagePackagePeerDependencies": true,
+    "removePackagePackagePeerDependenciesMeta": true,
+    "removePackagePackageDependenciesMeta": true,
+    "removePackagePackageOverrides": true,
+    "removePackagePackageResolutions": true,
+    "removePackagePackagePackageManager": true,
+    "removePackagePackagePackageType": true,
+    "directories": {
+      "buildResources": "build"
+    }
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild",
+      "vue-demi"
+    ]
+  }
+}

@@ -11,6 +11,8 @@ contextBridge.exposeInMainWorld('api', {
   getWallpaperHistory: async () => ipcRenderer.invoke('get-wallpaper-history'),
   deleteWallpaperHistory: async (historyId) => ipcRenderer.invoke('delete-wallpaper-history', historyId),
   clearWallpaperHistory: async () => ipcRenderer.invoke('clear-wallpaper-history'),
+  // 导入图片接口
+  importImage: async () => ipcRenderer.invoke('import-image'),
 });
 
 

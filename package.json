@@ -1,6 +1,6 @@
 {
   "name": "feiyu-wallpaper",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "飞鱼壁纸 - 精美的桌面壁纸应用",
   "author": "",
@@ -33,7 +33,7 @@
   "build": {
     "appId": "com.feiyu.wallpaper",
     "productName": "飞鱼壁纸",
-    "icon": "logo.png",
+    "icon": "logo.jpg",
     "mac": {
       "category": "public.app-category.utilities",
       "target": [
@@ -47,7 +47,7 @@
       "electron-main.js",
       "preload.cjs",
       "package.json",
-      "logo.png"
+      "logo.jpg"
     ],
     "asarUnpack": [],
     "compression": "maximum",

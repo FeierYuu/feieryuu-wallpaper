@@ -156,7 +156,8 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.cjs')
+      preload: path.join(__dirname, 'preload.cjs'),
+      webSecurity: false // 允许加载本地文件
     },
     frame: false,
     transparent: false, // 暂时关闭透明窗口
@@ -658,30 +659,115 @@ ipcMain.handle('download-image', async (_e, url) => {
   try {
     console.log('Downloading image:', url);
     
-    // 显示保存对话框
-    const result = await dialog.showSaveDialog(mainWindow, {
-      title: '保存壁纸',
-      defaultPath: `wallpaper-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.jpg`,
-      filters: [
-        { name: '图片文件', extensions: ['jpg', 'jpeg', 'png', 'webp'] },
-        { name: '所有文件', extensions: ['*'] }
-      ]
-    });
-    
-    if (result.canceled) {
-      return { ok: false, error: '用户取消下载' };
+    // 检查是否为本地文件
+    if (fsSync.existsSync(url)) {
+      console.log('Local file detected, copying...');
+      
+      // 显示保存对话框
+      const result = await dialog.showSaveDialog(mainWindow, {
+        title: '保存壁纸',
+        defaultPath: path.basename(url),
+        filters: [
+          { name: '图片文件', extensions: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'] },
+          { name: '所有文件', extensions: ['*'] }
+        ]
+      });
+      
+      if (result.canceled) {
+        return { ok: false, error: '用户取消下载' };
+      }
+      
+      const targetPath = result.filePath;
+      console.log('Target path:', targetPath);
+      
+      // 直接复制本地文件
+      await fs.copyFile(url, targetPath);
+      console.log('Copied to:', targetPath);
+      
+      return { ok: true, path: targetPath };
+    } else {
+      // 网络图片下载
+      // 显示保存对话框
+      const result = await dialog.showSaveDialog(mainWindow, {
+        title: '保存壁纸',
+        defaultPath: `wallpaper-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.jpg`,
+        filters: [
+          { name: '图片文件', extensions: ['jpg', 'jpeg', 'png', 'webp'] },
+          { name: '所有文件', extensions: ['*'] }
+        ]
+      });
+      
+      if (result.canceled) {
+        return { ok: false, error: '用户取消下载' };
+      }
+      
+      const targetPath = result.filePath;
+      console.log('Target path:', targetPath);
+      
+      // 使用快速下载方法
+      await fastDownload(url, targetPath);
+      console.log('Downloaded to:', targetPath);
+      
+      return { ok: true, path: targetPath };
     }
-    
-    const targetPath = result.filePath;
-    console.log('Target path:', targetPath);
-    
-    // 使用快速下载方法
-    await fastDownload(url, targetPath);
-    console.log('Downloaded to:', targetPath);
-    
-    return { ok: true, path: targetPath };
   } catch (e) {
     console.error('Download image error:', e);
     return { ok: false, error: String(e && e.message ? e.message : e) };
+  }
+});
+
+// 导入图片功能
+ipcMain.handle('import-image', async () => {
+  try {
+    console.log('Importing image...');
+    
+    // 显示文件选择对话框
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: '选择要导入的图片',
+      filters: [
+        { name: '图片文件', extensions: ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'] },
+        { name: '所有文件', extensions: ['*'] }
+      ],
+      properties: ['openFile']
+    });
+    
+    if (result.canceled || result.filePaths.length === 0) {
+      return { success: false, error: '用户取消选择' };
+    }
+    
+    const sourcePath = result.filePaths[0];
+    console.log('Selected file:', sourcePath);
+    
+    // 创建导入图片的保存目录
+    const importDir = path.join(app.getPath('userData'), 'imported-images');
+    if (!fsSync.existsSync(importDir)) {
+      fsSync.mkdirSync(importDir, { recursive: true });
+    }
+    
+    // 生成唯一的文件名
+    const ext = path.extname(sourcePath);
+    const fileName = `imported_${Date.now()}${ext}`;
+    const targetPath = path.join(importDir, fileName);
+    
+    // 复制文件到导入目录
+    await fs.copyFile(sourcePath, targetPath);
+    console.log('File copied to:', targetPath);
+    
+    // 添加到历史记录
+    const wallpaperData = {
+      url: targetPath, // 直接使用本地路径，不使用file://协议
+      thumb: targetPath, // 直接使用本地路径
+      title: `导入图片 - ${path.basename(sourcePath)}`,
+      localPath: targetPath,
+      isLocal: true // 标记为本地图片
+    };
+    
+    await addToHistory(wallpaperData);
+    console.log('Added to history:', wallpaperData);
+    
+    return { success: true, path: targetPath };
+  } catch (e) {
+    console.error('Import image error:', e);
+    return { success: false, error: String(e && e.message ? e.message : e) };
   }
 });

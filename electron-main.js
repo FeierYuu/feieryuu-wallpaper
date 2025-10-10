@@ -14,6 +14,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const streamPipeline = promisify(pipeline);
 
+// 全局变量
+
 // 历史壁纸管理
 const HISTORY_FILE = path.join(app.getPath('userData'), 'wallpaper-history.json');
 
@@ -151,7 +153,7 @@ const CACHE_SIZE = 50;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 480,
+    width: 520,
     height: 400,
     webPreferences: {
       nodeIntegration: false,
@@ -233,7 +235,10 @@ function createWindow() {
     console.log('🌐 Request:', details.url);
     callback({});
   });
+  
+  
 }
+
 
 app.whenReady().then(async () => {
   // 测试网络连接

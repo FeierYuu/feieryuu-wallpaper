@@ -30,17 +30,17 @@
       </div>
       <div class="flex items-center text-sm opacity-80 text-white -webkit-app-region-no-drag gap-2">
         <button 
-          class="hover:opacity-100 hover:bg-white/10 px-3 py-1.5 rounded transition-all duration-200 text-sm" 
+          class="hover:opacity-100 hover:bg-white/10 px-2 py-1.5 rounded transition-all duration-200 text-xs whitespace-nowrap" 
           @click="handlePrevPage" 
           :disabled="showHistory ? currentHistoryPage <= 1 : currentPage <= 1"
         >
           ← 上页
         </button>
-        <span class="text-sm opacity-60 px-1">
+        <span class="text-xs opacity-60 px-1 whitespace-nowrap">
           {{ showHistory ? `${currentHistoryPage}/${totalHistoryPages}` : currentPage }}
         </span>
         <button 
-          class="hover:opacity-100 hover:bg-white/10 px-3 py-1.5 rounded transition-all duration-200 text-sm" 
+          class="hover:opacity-100 hover:bg-white/10 px-2 py-1.5 rounded transition-all duration-200 text-xs whitespace-nowrap" 
           @click="handleNextPage"
           :disabled="showHistory ? currentHistoryPage >= totalHistoryPages : false"
         >
@@ -83,7 +83,7 @@
           </div>
         </div>
         
-        <div v-else class="grid grid-cols-4 flex-1 auto-rows-fr grid-container overflow-hidden" style="max-height: calc(100% - 2rem);">
+        <div v-else class="grid grid-cols-4 flex-1 auto-rows-fr grid-container" style="max-height: calc(100% - 2rem); overflow: hidden;">
           <div 
             v-for="(item, idx) in currentHistoryItems" 
             :key="item.id" 
@@ -664,6 +664,7 @@ async function importImage() {
     alert('导入失败：' + (e?.message || '未知错误'));
   }
 }
+
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown);
